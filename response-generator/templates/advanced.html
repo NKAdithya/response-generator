@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Response Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-600">Response Generator</h1>
+            <div class="flex items-center space-x-4">
+                <a href="/" class="text-gray-600 hover:text-blue-600 font-medium transition duration-300 ease-in-out">Basic Generator</a>
+                <a href="/advanced" class="text-blue-600 font-bold border-b-2 border-blue-600">Advanced Generator</a>
+                <a href="/pro" class="text-blue-600 font-bold border-b-2 border-blue-600">Pro Generator</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-8 p-6 bg-white rounded-xl shadow-lg flex-grow">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Create Your Form (Advanced)</h2>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Form Creator -->
+            <div class="form-creator bg-gray-50 p-6 rounded-lg shadow-inner col-span-1">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700">Form Fields</h3>
+                <div id="form-fields" class="space-y-4">
+                    <!-- Fields will be added here -->
+                </div>
+                <div class="mt-6 flex flex-wrap gap-2">
+                    <button id="add-text" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">Add Text Field</button>
+                    <button id="add-number" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">Add Number Field</button>
+                    <button id="add-radio" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">Add Radio Buttons</button>
+                    <button id="add-checkbox" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">Add Checkboxes</button>
+                    <button id="add-dropdown" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">Add Dropdown</button>
+                </div>
+                <button id="save-form" class="mt-6 w-full bg-green-500 text-white font-semibold py-3 rounded-lg hover:bg-green-600 transition duration-300">Save Form</button>
+            </div>
+
+            <!-- Form Preview -->
+            <div class="form-preview bg-gray-50 p-6 rounded-lg shadow-inner col-span-1">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700">Form Preview</h3>
+                <div id="preview-fields" class="space-y-4">
+                    <!-- Form preview will appear here -->
+                </div>
+            </div>
+
+            <!-- Response Generator -->
+            <div class="response-generator bg-gray-50 p-6 rounded-lg shadow-inner col-span-1">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700">Generate Responses</h3>
+                <div id="current-form-id" class="hidden"></div>
+                <div class="mb-4">
+                    <label for="num-responses" class="block text-sm font-medium text-gray-700 mb-1">Number of Responses:</label>
+                    <input type="number" id="num-responses" min="1" value="10" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex gap-2 mb-6">
+                    <button id="generate-btn" class="flex-1 bg-yellow-500 text-white font-semibold py-2 rounded-lg hover:bg-yellow-600 transition duration-300">Generate</button>
+                    <button id="export-csv" class="flex-1 bg-indigo-500 text-white font-semibold py-2 rounded-lg hover:bg-indigo-600 transition duration-300">Export to CSV</button>
+                </div>
+
+                <div class="responses-container mt-6">
+                    <h4 class="text-lg font-semibold mb-2 text-gray-700">Generated Responses</h4>
+                    <div id="responses-display" class="bg-white border border-gray-300 p-4 rounded-lg overflow-y-auto max-h-64 mb-4 font-mono text-sm"></div>
+                    <button id="copy-responses" class="w-full bg-gray-700 text-white font-semibold py-2 rounded-lg hover:bg-gray-800 transition duration-300">Copy Responses</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentFormId = null;
+            const formFieldsContainer = document.getElementById('form-fields');
+            const previewFieldsContainer = document.getElementById('preview-fields');
+            const addTextBtn = document.getElementById('add-text');
+            const addNumberBtn = document.getElementById('add-number');
+            const addRadioBtn = document.getElementById('add-radio');
+            const addCheckboxBtn = document.getElementById('add-checkbox');
+            const addDropdownBtn = document.getElementById('add-dropdown');
+            const saveFormBtn = document.getElementById('save-form');
+            const generateBtn = document.getElementById('generate-btn');
+            const exportCsvBtn = document.getElementById('export-csv');
+            const numResponsesInput = document.getElementById('num-responses');
+            const responsesDisplay = document.getElementById('responses-display');
+            const copyResponsesBtn = document.getElementById('copy-responses');
+
+            let fieldCounter = 0;
+
+            addTextBtn.addEventListener('click', () => addField('text'));
+            addNumberBtn.addEventListener('click', () => addField('number'));
+            addRadioBtn.addEventListener('click', () => addField('radio'));
+            addCheckboxBtn.addEventListener('click', () => addField('checkbox'));
+            addDropdownBtn.addEventListener('click', () => addField('dropdown'));
+
+            saveFormBtn.addEventListener('click', saveForm);
+            generateBtn.addEventListener('click', generateResponses);
+            exportCsvBtn.addEventListener('click', exportToCsv);
+            copyResponsesBtn.addEventListener('click', copyResponses);
+            
+            function showMessage(message) {
+                const messageBox = document.createElement('div');
+                messageBox.className = 'fixed top-4 right-4 p-4 bg-gray-800 text-white rounded-lg shadow-xl z-[999] transition-transform duration-300 transform translate-x-full';
+                messageBox.textContent = message;
+                document.body.appendChild(messageBox);
+                setTimeout(() => {
+                    messageBox.classList.remove('translate-x-full');
+                    messageBox.classList.add('translate-x-0');
+                }, 10);
+                setTimeout(() => {
+                    messageBox.classList.remove('translate-x-0');
+                    messageBox.classList.add('translate-x-full');
+                    messageBox.addEventListener('transitionend', () => messageBox.remove());
+                }, 3000);
+            }
+
+            function updateProbabilityTotal(fieldId) {
+                const probabilityInputs = document.querySelectorAll(`#${fieldId}-options input[type="range"]`);
+                let total = 0;
+                probabilityInputs.forEach(input => {
+                    total += parseInt(input.value, 10) || 0;
+                });
+                document.getElementById(`${fieldId}-total-prob`).textContent = `Total: ${total}%`;
+
+                if (total !== 100) {
+                    document.getElementById(`${fieldId}-total-prob`).classList.add('text-red-500');
+                    document.getElementById(`${fieldId}-total-prob`).classList.remove('text-green-500');
+                } else {
+                    document.getElementById(`${fieldId}-total-prob`).classList.add('text-green-500');
+                    document.getElementById(`${fieldId}-total-prob`).classList.remove('text-red-500');
+                }
+            }
+
+            function addField(type) {
+                const fieldId = `field-${fieldCounter++}`;
+                let fieldHtml = '';
+
+                // Common field elements
+                fieldHtml += `
+                    <div class="field-item p-4 border border-gray-200 rounded-lg bg-white relative" id="${fieldId}">
+                        <button class="remove-field absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center hover:bg-red-600" onclick="removeField('${fieldId}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <div class="mb-2">
+                            <label for="${fieldId}-label" class="block text-sm font-medium text-gray-700">Field Label:</label>
+                            <input type="text" id="${fieldId}-label" placeholder="Enter field label" class="mt-1 w-full border border-gray-300 rounded-lg p-2">
+                        </div>
+                        <input type="hidden" id="${fieldId}-type" value="${type}">
+                `;
+
+                // Type-specific elements
+                if (type === 'number') {
+                    fieldHtml += `
+                        <div class="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-100 advanced-options">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number Generation Rule:</label>
+                            <div class="flex items-center space-x-4 mb-2">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="${fieldId}-range-type" value="between" checked class="form-radio text-blue-600">
+                                    <span class="ml-2 text-sm text-gray-700">Between</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="${fieldId}-range-type" value="less_than" class="form-radio text-blue-600">
+                                    <span class="ml-2 text-sm text-gray-700">Less Than</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="${fieldId}-range-type" value="greater_than" class="form-radio text-blue-600">
+                                    <span class="ml-2 text-sm text-gray-700">Greater Than</span>
+                                </label>
+                            </div>
+                            <div id="${fieldId}-range-inputs">
+                                <div class="flex gap-2">
+                                    <input type="number" id="${fieldId}-min" placeholder="Min" class="w-1/2 border border-gray-300 rounded-lg p-2 text-sm">
+                                    <input type="number" id="${fieldId}-max" placeholder="Max" class="w-1/2 border border-gray-300 rounded-lg p-2 text-sm">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (type === 'radio' || type === 'checkbox' || type === 'dropdown') {
+                    fieldHtml += `
+                        <div class="mb-2">
+                            <label class="block text-sm font-medium text-gray-700">Options (with Probability):</label>
+                            <div id="${fieldId}-options" class="space-y-2 mt-1">
+                                <div class="option-item flex flex-col sm:flex-row items-center gap-2">
+                                    <input type="text" placeholder="Option 1" class="flex-1 border border-gray-300 rounded-lg p-2 text-sm">
+                                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                                        <input type="range" min="0" max="100" value="50" oninput="updateProbabilityLabel(this)" class="flex-1">
+                                        <span class="probability-value w-10 text-right text-sm">50%</span>
+                                        <button onclick="removeOption(this)" class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600">Remove</button>
+                                    </div>
+                                </div>
+                                <div class="option-item flex flex-col sm:flex-row items-center gap-2">
+                                    <input type="text" placeholder="Option 2" class="flex-1 border border-gray-300 rounded-lg p-2 text-sm">
+                                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                                        <input type="range" min="0" max="100" value="50" oninput="updateProbabilityLabel(this)" class="flex-1">
+                                        <span class="probability-value w-10 text-right text-sm">50%</span>
+                                        <button onclick="removeOption(this)" class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between">
+                                <button onclick="addOption('${fieldId}')" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm hover:bg-gray-300">Add Option</button>
+                                <span id="${fieldId}-total-prob" class="text-sm font-semibold text-green-500">Total: 100%</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                fieldHtml += `</div>`;
+                formFieldsContainer.insertAdjacentHTML('beforeend', fieldHtml);
+
+                // Add event listener for number field radio buttons
+                if (type === 'number') {
+                    const rangeInputsDiv = document.getElementById(`${fieldId}-range-inputs`);
+                    document.querySelectorAll(`input[name="${fieldId}-range-type"]`).forEach(radio => {
+                        radio.addEventListener('change', (event) => {
+                            const value = event.target.value;
+                            if (value === 'between') {
+                                rangeInputsDiv.innerHTML = `
+                                    <div class="flex gap-2">
+                                        <input type="number" id="${fieldId}-min" placeholder="Min" class="w-1/2 border border-gray-300 rounded-lg p-2 text-sm">
+                                        <input type="number" id="${fieldId}-max" placeholder="Max" class="w-1/2 border border-gray-300 rounded-lg p-2 text-sm">
+                                    </div>
+                                `;
+                            } else if (value === 'less_than') {
+                                rangeInputsDiv.innerHTML = `
+                                    <input type="number" id="${fieldId}-max" placeholder="Less than..." class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                                `;
+                            } else if (value === 'greater_than') {
+                                rangeInputsDiv.innerHTML = `
+                                    <input type="number" id="${fieldId}-min" placeholder="Greater than..." class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                                `;
+                            }
+                        });
+                    });
+                }
+                
+                // Add change listeners to probability sliders
+                if (type === 'radio' || type === 'checkbox' || type === 'dropdown') {
+                    document.querySelectorAll(`#${fieldId}-options input[type="range"]`).forEach(input => {
+                        input.addEventListener('input', () => updateProbabilityTotal(fieldId));
+                    });
+                    updateProbabilityTotal(fieldId);
+                }
+            }
+            
+            function saveForm() {
+                const fields = [];
+                const fieldItems = document.querySelectorAll('.field-item');
+                let formIsValid = true;
+
+                fieldItems.forEach(fieldItem => {
+                    const fieldId = fieldItem.id;
+                    const type = document.getElementById(`${fieldId}-type`).value;
+                    const label = document.getElementById(`${fieldId}-label`).value;
+
+                    const fieldData = {
+                        type,
+                        label,
+                    };
+
+                    if (type === 'number') {
+                        const rangeType = document.querySelector(`input[name="${fieldId}-range-type"]:checked`).value;
+                        fieldData.range_type = rangeType;
+                        
+                        if (rangeType === 'between') {
+                            const min = document.getElementById(`${fieldId}-min`).value;
+                            const max = document.getElementById(`${fieldId}-max`).value;
+                            if (min === '' || max === '') { formIsValid = false; showMessage('Min/Max values are required for "between" range.'); }
+                            fieldData.range_min = min;
+                            fieldData.range_max = max;
+                        } else if (rangeType === 'less_than') {
+                            const max = document.getElementById(`${fieldId}-max`).value;
+                            if (max === '') { formIsValid = false; showMessage('A value is required for "less than" range.'); }
+                            fieldData.range_max = max;
+                        } else if (rangeType === 'greater_than') {
+                            const min = document.getElementById(`${fieldId}-min`).value;
+                            if (min === '') { formIsValid = false; showMessage('A value is required for "greater than" range.'); }
+                            fieldData.range_min = min;
+                        }
+                    } else if (type === 'radio' || type === 'checkbox' || type === 'dropdown') {
+                        const options = [];
+                        const optionItems = document.querySelectorAll(`#${fieldId}-options .option-item`);
+                        let totalProbability = 0;
+                        optionItems.forEach(item => {
+                            const textInput = item.querySelector('input[type="text"]');
+                            const probabilityInput = item.querySelector('input[type="range"]');
+                            if (textInput.value.trim() !== '' && probabilityInput) {
+                                const probability = parseInt(probabilityInput.value, 10) || 0;
+                                totalProbability += probability;
+                                options.push({ text: textInput.value.trim(), probability });
+                            }
+                        });
+                        
+                        if (options.length === 0) {
+                            formIsValid = false;
+                            showMessage('Please add at least one option for this field.');
+                        } else if (totalProbability !== 100) {
+                            formIsValid = false;
+                            showMessage(`The total probability for field "${label}" must be 100%. Current total is ${totalProbability}%.`);
+                        }
+                        
+                        fieldData.options = options;
+                    }
+                    fields.push(fieldData);
+                });
+                
+                if (!formIsValid) {
+                    return;
+                }
+
+                if (fields.length === 0) {
+                    showMessage('Please add at least one field to the form');
+                    return;
+                }
+
+                fetch('/create_form', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ fields })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    currentFormId = data.form_id;
+                    document.getElementById('current-form-id').textContent = currentFormId;
+                    updateFormPreview(fields);
+                    showMessage('Form saved successfully!');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Error saving form');
+                });
+            }
+
+            function updateFormPreview(fields) {
+                previewFieldsContainer.innerHTML = '';
+
+                fields.forEach(field => {
+                    let fieldHtml = '';
+                    fieldHtml += `<div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">${field.label}</label>`;
+
+                    switch(field.type) {
+                        case 'text':
+                            fieldHtml += `<input type="text" placeholder="Text answer" class="w-full border border-gray-300 rounded-lg p-2">`;
+                            break;
+
+                        case 'number':
+                            let rule = '';
+                            if (field.range_type === 'between') {
+                                rule = `Between ${field.range_min} and ${field.range_max}`;
+                            } else if (field.range_type === 'less_than') {
+                                rule = `Less than ${field.range_max}`;
+                            } else if (field.range_type === 'greater_than') {
+                                rule = `Greater than ${field.range_min}`;
+                            }
+                            fieldHtml += `<p class="text-xs text-gray-500 mb-2">Rule: ${rule}</p>`;
+                            fieldHtml += `<input type="number" placeholder="Number answer" class="w-full border border-gray-300 rounded-lg p-2">`;
+                            break;
+
+                        case 'radio':
+                            field.options.forEach(option => {
+                                fieldHtml += `
+                                    <div class="flex items-center gap-2">
+                                        <input type="radio" name="${field.label}" id="${field.label}-${option.text}" class="text-blue-600 focus:ring-blue-500">
+                                        <label for="${field.label}-${option.text}" class="text-sm">${option.text} (${option.probability}%)</label>
+                                    </div>
+                                `;
+                            });
+                            break;
+
+                        case 'checkbox':
+                            field.options.forEach(option => {
+                                fieldHtml += `
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" name="${field.label}" id="${field.label}-${option.text}" class="text-blue-600 focus:ring-blue-500 rounded">
+                                        <label for="${field.label}-${option.text}" class="text-sm">${option.text} (${option.probability}%)</label>
+                                    </div>
+                                `;
+                            });
+                            break;
+
+                        case 'dropdown':
+                            fieldHtml += `<select class="w-full border border-gray-300 rounded-lg p-2">`;
+                            field.options.forEach(option => {
+                                fieldHtml += `<option value="${option.text}">${option.text} (${option.probability}%)</option>`;
+                            });
+                            fieldHtml += `</select>`;
+                            break;
+                    }
+
+                    fieldHtml += `</div>`;
+                    previewFieldsContainer.insertAdjacentHTML('beforeend', fieldHtml);
+                });
+            }
+
+            function generateResponses() {
+                if (!currentFormId) {
+                    showMessage('Please create and save a form first');
+                    return;
+                }
+
+                const numResponses = numResponsesInput.value;
+
+                if (!numResponses || numResponses < 1) {
+                    showMessage('Please enter a valid number of responses');
+                    return;
+                }
+
+                fetch('/generate_responses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        form_id: currentFormId,
+                        num_responses: numResponses
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showMessage(data.error);
+                        return;
+                    }
+                    displayResponses(data.responses);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Error generating responses');
+                });
+            }
+
+            function displayResponses(responses) {
+                responsesDisplay.innerHTML = '';
+                responses.forEach((response, index) => {
+                    const responseItem = document.createElement('div');
+                    responseItem.className = 'response-item p-2 border-b border-gray-200 last:border-b-0 whitespace-pre-wrap';
+
+                    let responseText = `Response ${index + 1}:\n`;
+                    for (const [key, value] of Object.entries(response)) {
+                        responseText += `  ${key}: ${value}\n`;
+                    }
+                    responseItem.textContent = responseText;
+                    responsesDisplay.appendChild(responseItem);
+                });
+            }
+
+            function exportToCsv() {
+                if (!currentFormId) {
+                    showMessage('No form selected');
+                    return;
+                }
+                window.location.href = `/export_csv/${currentFormId}`;
+            }
+
+            function copyResponses() {
+                if (responsesDisplay.textContent.trim() === '') {
+                    showMessage('No responses to copy');
+                    return;
+                }
+                const textarea = document.createElement('textarea');
+                textarea.value = responsesDisplay.textContent;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    const msg = successful ? 'Responses copied to clipboard!' : 'Failed to copy responses.';
+                    showMessage(msg);
+                } catch (err) {
+                    showMessage('Failed to copy responses.');
+                }
+                document.body.removeChild(textarea);
+            }
+            
+            // Initializing listeners for any existing probability sliders on page load
+            document.querySelectorAll('input[type="range"]').forEach(input => {
+                input.addEventListener('input', () => updateProbabilityTotal(input.closest('.field-item').id));
+            });
+            document.querySelectorAll('.field-item').forEach(fieldItem => {
+                updateProbabilityTotal(fieldItem.id);
+            });
+        });
+        
+        // Helper functions that need to be in global scope
+        function showMessage(message) {
+            const messageBox = document.createElement('div');
+            messageBox.className = 'fixed top-4 right-4 p-4 bg-gray-800 text-white rounded-lg shadow-xl z-[999] transition-transform duration-300 transform translate-x-full';
+            messageBox.textContent = message;
+            document.body.appendChild(messageBox);
+            setTimeout(() => {
+                messageBox.classList.remove('translate-x-full');
+                messageBox.classList.add('translate-x-0');
+            }, 10);
+            setTimeout(() => {
+                messageBox.classList.remove('translate-x-0');
+                messageBox.classList.add('translate-x-full');
+                messageBox.addEventListener('transitionend', () => messageBox.remove());
+            }, 3000);
+        }
+        
+        function updateProbabilityTotal(fieldId) {
+            const probabilityInputs = document.querySelectorAll(`#${fieldId}-options input[type="range"]`);
+            let total = 0;
+            probabilityInputs.forEach(input => {
+                total += parseInt(input.value, 10) || 0;
+            });
+            const totalProbSpan = document.getElementById(`${fieldId}-total-prob`);
+            if (totalProbSpan) {
+                totalProbSpan.textContent = `Total: ${total}%`;
+                if (total !== 100) {
+                    totalProbSpan.classList.add('text-red-500');
+                    totalProbSpan.classList.remove('text-green-500');
+                } else {
+                    totalProbSpan.classList.add('text-green-500');
+                    totalProbSpan.classList.remove('text-red-500');
+                }
+            }
+        }
+        
+        function updateProbabilityLabel(input) {
+            const valueSpan = input.nextElementSibling;
+            valueSpan.textContent = `${input.value}%`;
+            const fieldId = input.closest('.field-item').id;
+            updateProbabilityTotal(fieldId);
+        }
+
+        function removeField(fieldId) {
+            document.getElementById(fieldId).remove();
+        }
+
+        function addOption(fieldId) {
+            const optionsContainer = document.getElementById(`${fieldId}-options`);
+            const newOption = document.createElement('div');
+            newOption.className = 'option-item flex flex-col sm:flex-row items-center gap-2';
+            newOption.innerHTML = `
+                <input type="text" placeholder="New option" class="flex-1 border border-gray-300 rounded-lg p-2 text-sm">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="range" min="0" max="100" value="0" oninput="updateProbabilityLabel(this)" class="flex-1">
+                    <span class="probability-value w-10 text-right text-sm">0%</span>
+                    <button onclick="removeOption(this)" class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600">Remove</button>
+                </div>
+            `;
+            optionsContainer.appendChild(newOption);
+            // Update the total probability after adding a new option
+            updateProbabilityTotal(fieldId);
+        }
+
+        function removeOption(button) {
+            const fieldItem = button.closest('.field-item');
+            const fieldId = fieldItem.id;
+            button.parentElement.parentElement.remove();
+            // Update the total probability after removing an option
+            updateProbabilityTotal(fieldId);
+        }
+    </script>
+</body>
+</html>
